@@ -1,0 +1,131 @@
+# Morozov Andrii
+# Nr. albumu 292531
+
+#Dane wejsciowe
+nulldata 100
+series Y = randgen(f,3,4)
+series X1 = randgen(n,0,1)
+series X2 = randgen(t,10)
+series X3 = randgen(c,11)
+series X4 = randgen(c,95)
+series X5 = randgen(t,28)
+series X6 = randgen(t,4)
+series X7 = randgen(c,96)
+list xlist = X1 X2 X3 X4 X5 X6 X7
+n=nelem(xlist)
+
+#Funkcja tworzy macierz R0
+function matrix R0 (series Y, list xlist, scalar n)
+    matrix R0 = zeros(n,1)
+    loop foreach i xlist --quiet 
+        R0[i,1] = corr(Y,xlist.$i)
+    endloop
+    return R0
+end function
+
+#Funkcja tworzy macierz R
+function matrix R (list xlist, scalar n)
+    matrix R = zeros(n,n)
+    loop foreach i xlist --quiet 
+        loop foreach j xlist --quiet
+            R[i,j] = corr(xlist.$i,xlist.$j)
+        endloop
+    endloop
+    return R
+end function
+
+#Posortowane R0
+function matrix SortR0 (matrix R0, scalar n)
+    scalar temp = 0 #zmienna pomocnicza
+    loop i=1..n --quiet
+        if R0[i,1] < 0
+            R0[i,1] = abs(R0[i,1]) 
+        endif
+    endloop
+    loop i=1..n --quiet
+        loop j=1..n-i --quiet
+            if R0[j,1] > R0[j+1,1]
+                temp = R0[j,1]
+                R0[j,1]=R0[j+1,1]
+                R0[j+1,1]=temp  
+            endif
+        endloop
+    endloop
+    return R0         
+end function
+
+#Nowy układ zmiennych dla R0
+function matrix new_index_R0 (matrix R0, matrix Sort_R0, scalar n)
+    matrix Z = zeros(n,1)
+    loop i=1..n --quiet
+        loop j=1..n --quiet
+            if Sort_R0[i,1] == abs(R0[j,1])
+                Z[i,1] = j
+                break
+            endif
+        endloop
+    endloop
+    return Z   
+end function    
+
+#Nowy układ zmiennych dla R
+function matrix new_R (matrix R, matrix Z, scalar n)
+    matrix new_R = zeros(n,n)
+    loop i=1..n --quiet
+        loop j=1..n --quiet
+            new_R[i,j] = abs(R[Z[i,1],Z[j,1]])
+        endloop
+    endloop
+    return new_R
+end function
+
+#Regularna para korelacyjna
+function matrix Q (matrix R0, scalar n)
+    matrix Q = zeros(n,n)
+    loop i=1..n --quiet
+        loop j=i..n --quiet
+            Q[i,j] = R0[i,1]/R0[j,1]
+        endloop
+    endloop
+    return Q
+end function
+
+#Katalizatory
+function matrix Katalizator (matrix Q, matrix R, scalar n)
+    matrix K = zeros(n,n)
+    loop i=1..n --quiet
+        loop j=i..n --quiet
+            if R[i,j] > Q[i,j] 
+                K[i,j] = j
+            endif  
+        endloop
+    endloop
+    return K
+end function
+
+
+R0 = R0(Y,xlist,n) #macierz R0
+R = R(xlist,n) #macierz R
+R0
+Sort_R0 = SortR0(R0,n) #posortowane R0
+Sort_R0
+matrix new_index_R0 = new_index_R0(R0,Sort_R0,n) #nowe indeksy zmiennych
+# Z_1..n = X(odpowiedni indeks z wektoru poniżej)
+new_index_R0
+R
+matrix new_R = new_R(R,new_index_R0,n) #nowa macierz R
+new_R
+matrix Q = Q(Sort_R0,n)
+# ri / rj
+Q
+matrix K = Katalizator(Q,new_R,n)
+#Jeżeli r_ij > ri/rj w macierz wpisuje się indeks zmiennej katalizator
+K
+
+#===========================================================================
+# Ostatnia macierz pokazuje Katalizatory w NOWO utworzonych parach
+# Związek pomiędzy nowymi i starymi zmiennymi pokazuje wektor "new_index_R0"
+# Zmiennej Z1 odpowiada zmienna X z odpowiednim indeksem wektora
+# Dla Z2 następna wartość itd.
+# Niestety nie wiem jak to zaprogramować w GRETLu
+

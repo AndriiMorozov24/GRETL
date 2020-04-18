@@ -1,0 +1,89 @@
+#Andrii Morozov; Nr.albumu 292531
+#Metoda Hellwiga dla dowolnej liczby zmiennych
+#Wersja druga(dopracowana)
+
+#Dane wejsciowe
+nulldata 100
+series Y = randgen(f,3,4)
+series X1 = randgen(n,0,1)
+series X2 = randgen(t,10)
+series X3 = randgen(c,11)
+series X4 = randgen(c,95)
+series X5 = randgen(t,28)
+series X6 = randgen(t,4)
+series X7 = randgen(c,96)
+list xlist = X1 X2 X3 X4 X5 X6 X7
+n=nelem(xlist)
+
+#Funkcja liczy integralna pojemnosc przekazywanej do niej kombinacji
+function scalar Hellwig(series Y, list xlist_copy)
+    scalar summa = 0
+    scalar h=0
+    scalar H=0
+    loop foreach i xlist_copy --quiet 
+        r=corr(Y,xlist_copy.$i)^2
+        summa=0
+        loop foreach j xlist_copy --quiet 
+            summa+=abs(corr(xlist_copy.$i,xlist_copy.$j))
+        endloop
+        h=r/summa
+        H+=h
+    endloop
+    return H
+end function
+
+#generator pojedynczej kombinacji
+function matrix sWitcher (scalar n, matrix current_position)
+    loop i=1..n --quiet
+        if current_position[1,i]==0
+            current_position[1,i]=1
+            break
+        else
+            current_position[1,i]=0
+        endif
+    endloop
+    return current_position
+end function
+
+#zmienne pomocnicze
+matrix positions = zeros(1,n) #pomocniczy wektor dla generowania kombinacji
+scalar L=2^n-1 #liczba kombinacji
+list xlist_temp #pomocnicza lista
+list Najlepsza_Kombinacja
+matrix H = zeros(1,L) #tutaj przechowuja sie wszystkie integralne pojemnosci modelu
+scalar h #pojedyncza integralna pojemnosc
+scalar H_MAX=0
+#######################################
+loop i=1..L --quiet
+    positions=sWitcher(n,positions)   #
+    if sumr(positions)==n
+        h=Hellwig(Y,xlist)
+        h
+        xlist
+    else
+        xlist_temp=xlist              #
+        loop foreach j xlist --quiet  #
+        if positions[1,j]==1          #
+            xlist_temp-=xlist.$j      #
+        endif                         #
+        endloop                       #
+        h=Hellwig(Y,xlist_temp)       #
+        h                             #
+        xlist_temp                    #
+    endif                             #
+    H[i]=h 
+    loop k=1..i --quiet
+        if H[k]>H_MAX          
+            H_MAX=H[k]
+            if k!=L
+                Najlepsza_Kombinacja=xlist_temp
+            else
+                Najlepsza_Kombinacja=xlist
+            endif
+        endif  
+    endloop
+endloop
+H 
+H_MAX
+Najlepsza_Kombinacja
+     
